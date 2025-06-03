@@ -1,0 +1,43 @@
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: cmd/gophermart/Dockerfile  # Путь к Dockerfile для server
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+      - air-bin:/root/go/bin
+    working_dir: /app
+    command: air -c .air.server.toml
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    env_file:
+      - .env
+    environment:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    networks:
+      - metrics-network
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      DATABASE_DSN: postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable
+    volumes:
+      - ./postgresql-data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:${DB_PORT}:5432"
+    networks:
+      - metrics-network
+
+volumes:
+  air-bin:
+
+networks:
+  metrics-network:
+    driver: bridge
