@@ -1,6 +1,7 @@
 [build]
-cmd = "go build -o ./tmp/server /app/cmd/gophermart/main.go"
+cmd = "go build -gcflags='all=-N -l' -o ./tmp/server /app/cmd/gophermart/main.go"
 bin = "tmp/server"
+full_bin = "dlv exec --accept-multiclient --log --headless --continue --listen :2345 --api-version 2 ./tmp/server"
 delay = 1000
 log = "logs/server.log"
 

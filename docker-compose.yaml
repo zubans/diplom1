@@ -12,6 +12,7 @@ services:
     command: air -c .air.server.toml
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
+      - "2345:2345"
     env_file:
       - .env
     environment:
