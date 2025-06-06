@@ -71,7 +71,7 @@ func (r *PostgresOrderRepository) UpdateOrderStatus(ctx context.Context, number 
 		return err
 	}
 
-	if "PROCESSED" == status {
+	if status == "PROCESSED" {
 		var userID int
 		err = tx.QueryRowContext(ctx, `SELECT user_id FROM orders WHERE number = $1 FOR UPDATE`, number).Scan(&userID)
 		if err != nil {
