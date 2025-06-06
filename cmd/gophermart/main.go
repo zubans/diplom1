@@ -1,6 +1,8 @@
 package main
 
 import (
+	"gophermart/internal/repos"
+	"gophermart/internal/services"
 	"log"
 	"os"
 
@@ -9,6 +11,7 @@ import (
 
 	"gophermart/internal/handlers"
 	"gophermart/internal/initialize"
+	"gophermart/internal/middlewares"
 	"gophermart/internal/routes"
 )
 
@@ -27,13 +30,27 @@ func main() {
 		log.Fatal("JWT_SECRET must be set")
 	}
 
+	accrualURL := os.Getenv("ACCRUAL_URL")
+	if accrualURL == "" {
+		log.Fatal("ACCRUAL_URL must be set")
+	}
+
 	db := initialize.InitDB()
 	defer db.Close()
 
 	r := gin.Default()
 
-	userHandler := handlers.New(db, jwtSecret)
-	routes.SetupUserRoutes(r, userHandler)
+	userRepo := repos.NewPostgresUserRepository(db)
+	authService := services.NewAuthService(userRepo, jwtSecret)
+	authHandler := handlers.New(authService)
+	routes.SetupUserRoutes(r, authHandler)
+
+	orderRepo := repos.NewPostgresOrderRepository(db)
+	orderService := services.NewOrderService(orderRepo, accrualURL)
+	orderHandler := handlers.NewOrderHandler(orderService)
+	authMW := middlewares.AuthMiddleware([]byte(jwtSecret))
+
+	routes.SetupOrderRoutes(r, orderHandler, authMW)
 
 	log.Printf("Server is running at %s", runAddress)
 	if err := r.Run(runAddress); err != nil {

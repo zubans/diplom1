@@ -1,9 +1,11 @@
 package middlewares
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -25,6 +27,36 @@ func AuthMiddleware(secret []byte) gin.HandlerFunc {
 			return
 		}
 
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		sub, exists := claims["sub"]
+		if !exists {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		userID, err := parseUserID(sub)
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		c.Set("userID", userID)
 		c.Next()
+	}
+}
+
+func parseUserID(sub interface{}) (int, error) {
+	switch v := sub.(type) {
+	case float64:
+		return int(v), nil
+	case string:
+		return strconv.Atoi(v)
+	default:
+		return 0, errors.New("invalid user ID format")
 	}
 }
