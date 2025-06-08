@@ -95,6 +95,10 @@ func (s *OrderService) startStatusChecker(number string) {
 	}
 }
 
+func (s *OrderService) GetOrders(ctx context.Context, userID int) ([]repos.Order, error) {
+	return s.orderRepo.GetOrders(ctx, userID)
+}
+
 func (s *OrderService) checkOrderStatus(ctx context.Context, number string) (string, float64, error) {
 	url := fmt.Sprintf("%s/api/orders/%s", s.accrualURL, number)
 

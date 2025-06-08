@@ -26,6 +26,7 @@ func main() {
 	}
 	//dbURI := os.Getenv("DATABASE_URI")
 	jwtSecret := os.Getenv("JWT_SECRET")
+	authMW := middlewares.AuthMiddleware([]byte(jwtSecret))
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET must be set")
 	}
@@ -40,17 +41,28 @@ func main() {
 
 	r := gin.Default()
 
-	userRepo := repos.NewPostgresUserRepository(db)
-	authService := services.NewAuthService(userRepo, jwtSecret)
+	postgresRepo := repos.NewPostgresUserRepository(db)
+	authService := services.NewAuthService(postgresRepo, jwtSecret)
 	authHandler := handlers.New(authService)
 	routes.SetupUserRoutes(r, authHandler)
 
 	orderRepo := repos.NewPostgresOrderRepository(db)
 	orderService := services.NewOrderService(orderRepo, accrualURL)
 	orderHandler := handlers.NewOrderHandler(orderService)
-	authMW := middlewares.AuthMiddleware([]byte(jwtSecret))
 
 	routes.SetupOrderRoutes(r, orderHandler, authMW)
+
+	balanceRepo := repos.NewPostgresBalanceRepository(db)
+	balanceService := services.NewBalanceService(balanceRepo, 50)
+	balanceHandler := handlers.NewBalanceHandler(balanceService)
+
+	routes.SetupBalanceRoutes(r, balanceHandler, authMW)
+
+	withdrawalRepo := repos.NewPostgresWithdrawalRepository(db)
+	withdrawalService := services.NewWithdrawalService(withdrawalRepo)
+	withdrawalHandler := handlers.NewWithdrawalHandler(withdrawalService)
+
+	routes.SetupWithdrawalRoutes(r, withdrawalHandler, authMW)
 
 	log.Printf("Server is running at %s", runAddress)
 	if err := r.Run(runAddress); err != nil {

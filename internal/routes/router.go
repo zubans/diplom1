@@ -18,5 +18,23 @@ func SetupOrderRoutes(r *gin.Engine, orderHandler *handlers.OrderHandler, authMW
 	orderGroup.Use(authMW)
 	{
 		orderGroup.POST("", orderHandler.UploadOrder)
+		orderGroup.GET("", orderHandler.GetOrders)
 	}
+}
+
+func SetupBalanceRoutes(r *gin.Engine, balanceHandler *handlers.BalanceHandler, authMW gin.HandlerFunc) {
+	api := r.Group("/api/user")
+	api.Use(authMW)
+	{
+		api.GET("/balance", balanceHandler.GetBalance)
+		api.POST("/balance/withdraw", balanceHandler.Withdraw)
+	}
+}
+
+func SetupWithdrawalRoutes(r *gin.Engine, withdrawalHandler *handlers.WithdrawalHandler, authMW gin.HandlerFunc) {
+	api := r.Group("/api/user")
+	api.Use(authMW)
+
+	api.GET("/withdrawals", authMW, withdrawalHandler.GetWithdrawals)
+
 }

@@ -3,12 +3,21 @@ package mocks
 import (
 	"context"
 	"errors"
+	"gophermart/internal/repos"
 
 	"github.com/stretchr/testify/mock"
 )
 
 type OrderRepository struct {
 	mock.Mock
+}
+
+func (m *OrderRepository) GetOrders(ctx context.Context, userID int) ([]repos.Order, error) {
+	args := m.Called(ctx, userID)
+
+	orders, _ := args.Get(0).([]repos.Order)
+
+	return orders, args.Error(1)
 }
 
 func (m *OrderRepository) GetOrderUserID(ctx context.Context, number string) (int, error) {

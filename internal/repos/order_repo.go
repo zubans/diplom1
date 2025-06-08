@@ -5,17 +5,25 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 )
 
 var (
-	ErrOrderExists   = errors.New("order exists")
 	ErrOrderConflict = errors.New("order conflict")
 )
+
+type Order struct {
+	Number     string
+	Status     string
+	Accrual    float64
+	UploadedAt time.Time
+}
 
 type OrderRepository interface {
 	GetOrderUserID(ctx context.Context, number string) (int, error)
 	CreateOrder(ctx context.Context, userID int, number string) error
 	UpdateOrderStatus(ctx context.Context, number string, status string, accrual float64) error
+	GetOrders(ctx context.Context, userID int) ([]Order, error)
 }
 
 type PostgresOrderRepository struct {
@@ -35,6 +43,28 @@ func (r *PostgresOrderRepository) GetOrderUserID(ctx context.Context, number str
 		return 0, nil
 	}
 	return userID, err
+}
+
+func (r *PostgresOrderRepository) GetOrders(ctx context.Context, userID int) ([]Order, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT number, status, accrual, uploaded_at FROM orders WHERE user_id = $1`,
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []Order
+	for rows.Next() {
+		var o Order
+		if err := rows.Scan(&o.Number, &o.Status, &o.Accrual, &o.UploadedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, o)
+	}
+	return result, nil
+
 }
 
 func (r *PostgresOrderRepository) CreateOrder(ctx context.Context, userID int, number string) error {
@@ -71,7 +101,7 @@ func (r *PostgresOrderRepository) UpdateOrderStatus(ctx context.Context, number 
 		return err
 	}
 
-	if status == "PROCESSED" {
+	if status == "PROCESSED" && accrual != 0 {
 		var userID int
 		err = tx.QueryRowContext(ctx, `SELECT user_id FROM orders WHERE number = $1 FOR UPDATE`, number).Scan(&userID)
 		if err != nil {
