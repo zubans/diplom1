@@ -42,5 +42,10 @@ func (r *PostgresWithdrawalRepository) GetWithdrawals(ctx context.Context, userI
 		}
 		result = append(result, w)
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
