@@ -49,7 +49,7 @@ func main() {
 	routes.SetupUserRoutes(r, authHandler)
 
 	orderRepo := repos.NewPostgresOrderRepository(db)
-	orderService := services.NewOrderService(orderRepo, cfg.Accrual_address)
+	orderService := services.NewOrderService(orderRepo, cfg.AccrualAddress)
 	orderHandler := handlers.NewOrderHandler(orderService)
 
 	routes.SetupOrderRoutes(r, orderHandler, authMW)

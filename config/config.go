@@ -9,25 +9,25 @@ import (
 )
 
 type Config struct {
-	RunAddr         string `env:"RUN_ADDRESS"`
-	DBCfg           string `env:"DATABASE_URI"`
-	Accrual_address string `env:"ACCRUAL_SYSTEM_ADDRESS"`
+	RunAddr        string `env:"RUN_ADDRESS"`
+	DBCfg          string `env:"DATABASE_URI"`
+	AccrualAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 }
 
 func NewServerConfig() *Config {
 	var db string
 	var cfg Config
-	var accr_addr string
+	var accrAddr string
 	var addr string
 
 	flag.StringVar(&addr, "a", "localhost:8080", "address and port to run server")
-	flag.StringVar(&accr_addr, "r", "localhost:8081", "address and port to run server")
+	flag.StringVar(&accrAddr, "r", "localhost:8081", "address and port to run server")
 	flag.StringVar(&db, "d", "", "db credential")
 
 	flag.Parse()
 
 	cfg.RunAddr = addr
-	cfg.Accrual_address = accr_addr
+	cfg.AccrualAddress = accrAddr
 	cfg.DBCfg = db
 
 	err := env.ParseWithFuncs(&cfg, map[reflect.Type]env.ParserFunc{
