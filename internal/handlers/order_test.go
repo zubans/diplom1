@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"gophermart/internal/repos"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -90,4 +91,23 @@ func TestUploadOrder(t *testing.T) {
 			mockRepo.AssertExpectations(t)
 		})
 	}
+}
+
+func TestGetOrders_InternalError(t *testing.T) {
+	mockRepo := new(mocks.OrderRepository)
+	service := services.NewOrderService(mockRepo, "http://localhost")
+	handler := NewOrderHandler(service)
+
+	router := gin.Default()
+	router.Use(mockAuthMiddleware(1))
+	router.GET("/orders", handler.GetOrders)
+
+	mockRepo.On("GetOrders", mock.Anything, 1).Return([]repos.Order{}, errors.New("db error")).Once()
+
+	req := httptest.NewRequest("GET", "/orders", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	mockRepo.AssertExpectations(t)
 }

@@ -6,6 +6,7 @@ import (
 	"gophermart/internal/repos"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gophermart/internal/services"
@@ -35,17 +36,27 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 		return
 	}
 
+	if len(orders) == 0 {
+		c.Status(http.StatusNoContent)
+		return
+	}
+
 	resp := make([]OrderResponse, 0, len(orders))
 	for _, o := range orders {
 		var accrual *float64
 		if o.Accrual != 0 {
 			accrual = &o.Accrual
 		}
+
+		uploadedAt := ""
+		if !o.UploadedAt.IsZero() {
+			uploadedAt = o.UploadedAt.Format(time.RFC3339)
+		}
 		resp = append(resp, OrderResponse{
 			Number:     o.Number,
 			Status:     o.Status,
 			Accrual:    accrual,
-			UploadedAt: o.UploadedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UploadedAt: uploadedAt,
 		})
 	}
 

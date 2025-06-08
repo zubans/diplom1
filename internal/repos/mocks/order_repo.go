@@ -14,10 +14,7 @@ type OrderRepository struct {
 
 func (m *OrderRepository) GetOrders(ctx context.Context, userID int) ([]repos.Order, error) {
 	args := m.Called(ctx, userID)
-
-	orders, _ := args.Get(0).([]repos.Order)
-
-	return orders, args.Error(1)
+	return args.Get(0).([]repos.Order), args.Error(1)
 }
 
 func (m *OrderRepository) GetOrderUserID(ctx context.Context, number string) (int, error) {

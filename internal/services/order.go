@@ -96,7 +96,13 @@ func (s *OrderService) startStatusChecker(number string) {
 }
 
 func (s *OrderService) GetOrders(ctx context.Context, userID int) ([]repos.Order, error) {
-	return s.orderRepo.GetOrders(ctx, userID)
+	orders, err := s.orderRepo.GetOrders(ctx, userID)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get orders: %w", err)
+	}
+	return orders, nil
+
 }
 
 func (s *OrderService) checkOrderStatus(ctx context.Context, number string) (string, float64, error) {
