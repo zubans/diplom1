@@ -23,19 +23,10 @@ func main() {
 		log.Println("No .env file found, using system environment variables")
 	}
 
-	runAddress := os.Getenv("RUN_ADDRESS")
-	if runAddress == "" {
-		runAddress = ":8080"
-	}
 	jwtSecret := os.Getenv("JWT_SECRET")
 	authMW := middlewares.AuthMiddleware([]byte(jwtSecret))
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET must be set")
-	}
-
-	accrualURL := os.Getenv("ACCRUAL_URL")
-	if accrualURL == "" {
-		log.Fatal("ACCRUAL_URL must be set")
 	}
 
 	db := initialize.InitDB(cfg)
@@ -66,8 +57,8 @@ func main() {
 
 	routes.SetupWithdrawalRoutes(r, withdrawalHandler, authMW)
 
-	log.Printf("Server is running at %s", runAddress)
-	if err := r.Run(runAddress); err != nil {
+	log.Printf("Server is running at %s", cfg.RunAddr)
+	if err := r.Run(cfg.RunAddr); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
