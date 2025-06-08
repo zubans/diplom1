@@ -20,7 +20,7 @@ func NewServerConfig() *Config {
 	var addr string
 
 	flag.StringVar(&addr, "a", "localhost:8080", "address and port to run server")
-	flag.StringVar(&accrAddr, "r", "localhost:8081", "address and port to connect accrual server")
+	flag.StringVar(&accrAddr, "r", "http://localhost:8081", "address and port to connect accrual server")
 	flag.StringVar(&db, "d", "postgres://db_user:db_pass@localhost:5432/mydb?sslmode=disable", "db credential")
 
 	flag.Parse()
