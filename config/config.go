@@ -4,8 +4,7 @@ import (
 	"flag"
 	"github.com/caarlos0/env/v6"
 	"log"
-	"reflect"
-	"time"
+	"strings"
 )
 
 type Config struct {
@@ -30,24 +29,12 @@ func NewServerConfig() *Config {
 	cfg.AccrualAddress = accrAddr
 	cfg.DBCfg = db
 
-	err := env.ParseWithFuncs(&cfg, map[reflect.Type]env.ParserFunc{
-		reflect.TypeOf(time.Duration(0)): func(value string) (interface{}, error) {
-			num, err := time.ParseDuration(value)
-			if err == nil {
-				return num, nil
-			}
-			seconds, err := time.ParseDuration(value + "s")
-			if err != nil {
-				return nil, err
-			}
-			return seconds, nil
-		},
-	},
-	)
-
-	if err != nil {
-		return nil
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("Error parsing env vars: %v", err)
 	}
+
+	cfg.RunAddr = strings.TrimPrefix(cfg.RunAddr, "http://")
+	cfg.RunAddr = strings.TrimPrefix(cfg.RunAddr, "https://")
 
 	return &cfg
 }

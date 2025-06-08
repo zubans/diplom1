@@ -21,7 +21,7 @@ func TestGetWithdrawals(t *testing.T) {
 	withdrawalHandler := NewWithdrawalHandler(withdrawalService)
 
 	router := gin.Default()
-	router.Use(mockAuthMiddleware(77)) // userID=77
+	router.Use(mockAuthMiddleware(77))
 	router.GET("/api/user/withdrawals", withdrawalHandler.GetWithdrawals)
 
 	now := time.Now()
