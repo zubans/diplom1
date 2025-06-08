@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gophermart/config"
 	"gophermart/internal/repos"
 	"gophermart/internal/services"
 	"log"
@@ -15,6 +16,8 @@ import (
 	"gophermart/internal/routes"
 )
 
+var cfg = config.NewServerConfig()
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
@@ -24,7 +27,6 @@ func main() {
 	if runAddress == "" {
 		runAddress = ":8080"
 	}
-	//dbURI := os.Getenv("DATABASE_URI")
 	jwtSecret := os.Getenv("JWT_SECRET")
 	authMW := middlewares.AuthMiddleware([]byte(jwtSecret))
 	if jwtSecret == "" {
@@ -36,7 +38,7 @@ func main() {
 		log.Fatal("ACCRUAL_URL must be set")
 	}
 
-	db := initialize.InitDB()
+	db := initialize.InitDB(cfg)
 	defer db.Close()
 
 	r := gin.Default()
@@ -47,7 +49,7 @@ func main() {
 	routes.SetupUserRoutes(r, authHandler)
 
 	orderRepo := repos.NewPostgresOrderRepository(db)
-	orderService := services.NewOrderService(orderRepo, accrualURL)
+	orderService := services.NewOrderService(orderRepo, cfg.Accrual_address)
 	orderHandler := handlers.NewOrderHandler(orderService)
 
 	routes.SetupOrderRoutes(r, orderHandler, authMW)

@@ -3,31 +3,21 @@ package initialize
 import (
 	"database/sql"
 	"errors"
-	"fmt"
-	"log"
-	"os"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"gophermart/config"
+	"log"
 )
 
-func InitDB() *sql.DB {
+func InitDB(cfg *config.Config) *sql.DB {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file: ", err)
 	}
 
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
-	)
-
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("postgres", cfg.RunAddr)
 	if err != nil {
 		log.Fatalf("Error opening database: %v", err)
 	}
