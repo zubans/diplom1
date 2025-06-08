@@ -17,7 +17,7 @@ func InitDB(cfg *config.Config) *sql.DB {
 		log.Fatal("Error loading .env file: ", err)
 	}
 
-	db, err := sql.Open("postgres", cfg.RunAddr)
+	db, err := sql.Open("postgres", cfg.DBCfg)
 	if err != nil {
 		log.Fatalf("Error opening database: %v", err)
 	}
