@@ -30,24 +30,24 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkzMjA0M
 ### Загрузка номера заказа
 POST http://localhost:8080/api/user/orders HTTP/1.1
 Content-Type: text/plain
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkzMjA0MzUsImlhdCI6MTc0OTIzNDAzNSwic3ViIjo3fQ.WRU7NJHSPt1Y7GvsGLfqxw40MWkzOcMqF-FiIPqi-9I
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk0NjAxMjUsImlhdCI6MTc0OTM3MzcyNSwic3ViIjoxfQ.9tV5qJfI6qLKRot4BNLV7ptRdvefOmd-hhNkic4XTEs
 
 55563340
 
 ### Баланс
 GET http://localhost:8080/api/user/balance HTTP/1.1
 Content-Length: 0
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkzMjA1NzEsImlhdCI6MTc0OTIzNDE3MSwic3ViIjo3fQ.mOECOqb9mlF-vf2Ku5FJQarIYdsjWL_16z8T3phpVuQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk0NjAxMjUsImlhdCI6MTc0OTM3MzcyNSwic3ViIjoxfQ.9tV5qJfI6qLKRot4BNLV7ptRdvefOmd-hhNkic4XTEs
 
 ### Совершенные покупки
 GET http://localhost:8080/api/user/withdrawals HTTP/1.1
 Content-Length: 0
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkzMjA1NzEsImlhdCI6MTc0OTIzNDE3MSwic3ViIjo3fQ.mOECOqb9mlF-vf2Ku5FJQarIYdsjWL_16z8T3phpVuQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk0NjAxMjUsImlhdCI6MTc0OTM3MzcyNSwic3ViIjoxfQ.9tV5qJfI6qLKRot4BNLV7ptRdvefOmd-hhNkic4XTEs
 
 ### Списание балов
 POST http://localhost:8080/api/user/balance/withdraw HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkzMjA1NzEsImlhdCI6MTc0OTIzNDE3MSwic3ViIjo3fQ.mOECOqb9mlF-vf2Ku5FJQarIYdsjWL_16z8T3phpVuQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk0NjAxMjUsImlhdCI6MTc0OTM3MzcyNSwic3ViIjoxfQ.9tV5qJfI6qLKRot4BNLV7ptRdvefOmd-hhNkic4XTEs
 
 {
   "order": "2377225624",
@@ -60,7 +60,7 @@ POST http://localhost:8081/api/orders HTTP/1.1
 Content-Type: application/json
 
 {
-  "order": "55563340",
+  "order": "6545743",
   "goods": [
     {
       "description": "Чайник1 Bork",
@@ -74,8 +74,8 @@ Content-Type: application/json
 }
 
 ### Получение информации о начислении баллов
-#GET http://localhost:8081/api/orders/6545743
-GET http://localhost:8081/api/orders/55563340
+GET http://localhost:8081/api/orders/6545743
+#GET http://localhost:8081/api/orders/55563340
 #GET http://localhost:8081/api/orders/24536757
 Content-Length: 0
 

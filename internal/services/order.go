@@ -106,7 +106,7 @@ func (s *OrderService) GetOrders(ctx context.Context, userID int) ([]repos.Order
 }
 
 func (s *OrderService) checkOrderStatus(ctx context.Context, number string) (string, float64, error) {
-	url := fmt.Sprintf("%s/api/orders/%s", s.accrualURL, number)
+	url := fmt.Sprintf("http://%s/api/orders/%s", s.accrualURL, number)
 
 	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
 	resp, err := s.client.Do(req)
