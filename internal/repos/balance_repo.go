@@ -6,11 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lib/pq"
-)
-
-var (
-	ErrDuplicateWithdrawal = errors.New("duplicate withdrawal order")
-	ErrInsufficientFunds   = errors.New("insufficient funds")
+	"gophermart/internal/dferrors"
 )
 
 type PostgresBalanceRepository struct {
@@ -64,7 +60,7 @@ func (r *PostgresBalanceRepository) Withdraw(ctx context.Context, userID int, or
 	}
 
 	if currentBalance < sum {
-		return ErrInsufficientFunds
+		return dferrors.ErrInsufficientFunds
 	}
 
 	_, err = tx.ExecContext(ctx,
@@ -74,7 +70,7 @@ func (r *PostgresBalanceRepository) Withdraw(ctx context.Context, userID int, or
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-			return ErrDuplicateWithdrawal
+			return dferrors.ErrDuplicateWithdrawal
 		}
 		return fmt.Errorf("withdrawal insert error: %w", err)
 	}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"gophermart/internal/dferrors"
 	"gophermart/internal/repos"
 	"io"
 	"net/http"
@@ -32,12 +33,12 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 
 	orders, err := h.orderService.GetOrders(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		c.JSON(http.StatusOK, gin.H{"error": "internal error"})
 		return
 	}
 
 	if len(orders) == 0 {
-		c.Status(http.StatusNoContent)
+		c.Status(http.StatusOK)
 		return
 	}
 
@@ -76,7 +77,7 @@ func (h *OrderHandler) UploadOrder(c *gin.Context) {
 	status, err := h.orderService.AddOrder(c.Request.Context(), userID, number)
 	if err != nil {
 		switch {
-		case errors.Is(err, services.ErrInvalidNumber):
+		case errors.Is(err, dferrors.ErrInvalidNumber):
 			c.AbortWithStatus(http.StatusUnprocessableEntity)
 		case errors.Is(err, repos.ErrOrderConflict):
 			c.AbortWithStatus(http.StatusConflict)

@@ -58,9 +58,17 @@ func (r *PostgresOrderRepository) GetOrders(ctx context.Context, userID int) ([]
 	var result []Order
 	for rows.Next() {
 		var o Order
-		if err := rows.Scan(&o.Number, &o.Status, &o.Accrual, &o.UploadedAt); err != nil {
+		var accrual sql.NullFloat64
+		if err := rows.Scan(&o.Number, &o.Status, &accrual, &o.UploadedAt); err != nil {
 			return nil, err
 		}
+
+		if accrual.Valid {
+			o.Accrual = accrual.Float64
+		} else {
+			o.Accrual = 0
+		}
+
 		result = append(result, o)
 	}
 
@@ -69,8 +77,34 @@ func (r *PostgresOrderRepository) GetOrders(ctx context.Context, userID int) ([]
 	}
 
 	return result, nil
-
 }
+
+//func (r *PostgresOrderRepository) GetOrders(ctx context.Context, userID int) ([]Order, error) {
+//	rows, err := r.db.QueryContext(ctx,
+//		`SELECT number, status, accrual, uploaded_at FROM orders WHERE user_id = $1`,
+//		userID,
+//	)
+//	if err != nil {
+//		return nil, err
+//	}
+//	defer rows.Close()
+//
+//	var result []Order
+//	for rows.Next() {
+//		var o Order
+//		if err := rows.Scan(&o.Number, &o.Status, &o.Accrual, &o.UploadedAt); err != nil {
+//			return nil, err
+//		}
+//		result = append(result, o)
+//	}
+//
+//	if err := rows.Err(); err != nil {
+//		return nil, err
+//	}
+//
+//	return result, nil
+//
+//}
 
 func (r *PostgresOrderRepository) CreateOrder(ctx context.Context, userID int, number string) error {
 	_, err := r.db.ExecContext(ctx,

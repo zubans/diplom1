@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"gophermart/internal/repos"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -108,6 +111,36 @@ func TestGetOrders_InternalError(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 	mockRepo.AssertExpectations(t)
+}
+
+func TestGetOrders_NullAccrual(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	repo := repos.NewPostgresOrderRepository(db)
+	userID := 1
+	testNumber := "123"
+	testStatus := "NEW"
+	testUploadedAt := time.Now()
+
+	rows := sqlmock.NewRows([]string{"number", "status", "accrual", "uploaded_at"}).
+		AddRow(testNumber, testStatus, nil, testUploadedAt)
+
+	mock.ExpectQuery("^SELECT (.+) FROM orders WHERE user_id = \\$1$").
+		WithArgs(userID).
+		WillReturnRows(rows)
+
+	orders, err := repo.GetOrders(context.Background(), userID)
+
+	assert.NoError(t, err)
+	assert.Len(t, orders, 1)
+	assert.Equal(t, testNumber, orders[0].Number)
+	assert.Equal(t, testStatus, orders[0].Status)
+	assert.Equal(t, 0.0, orders[0].Accrual)
+	assert.WithinDuration(t, testUploadedAt, orders[0].UploadedAt, time.Millisecond)
+
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

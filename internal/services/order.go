@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"gophermart/internal/dferrors"
 	"log"
 	"net/http"
 	"os"
@@ -13,10 +13,6 @@ import (
 
 	"github.com/ShiraazMoollatjie/goluhn"
 	"gophermart/internal/repos"
-)
-
-var (
-	ErrInvalidNumber = errors.New("invalid order number")
 )
 
 type OrderService struct {
@@ -37,7 +33,7 @@ func NewOrderService(orderRepo repos.OrderRepository, accrualURL string) *OrderS
 
 func (s *OrderService) AddOrder(ctx context.Context, userID int, number string) (int, error) {
 	if _, err := strconv.Atoi(number); err != nil {
-		return 0, ErrInvalidNumber
+		return 0, dferrors.ErrInvalidNumber
 	}
 
 	if err := validateOrderNumber(number); err != nil {
@@ -60,6 +56,16 @@ func (s *OrderService) AddOrder(ctx context.Context, userID int, number string) 
 		return 0, err
 	}
 
+	status, accrual, err := s.checkOrderStatus(ctx, number)
+	if err == nil {
+		if isFinalStatus(status) {
+			if err := s.orderRepo.UpdateOrderStatus(ctx, number, status, accrual); err != nil {
+				log.Printf("Failed to update initial status: %v", err)
+			}
+			return mapStatusToHTTP(status), nil
+		}
+	}
+
 	go s.startStatusChecker(number)
 
 	return http.StatusAccepted, nil
@@ -72,6 +78,11 @@ func (s *OrderService) startStatusChecker(number string) {
 	ticker := time.NewTicker(s.checkInterval)
 	defer ticker.Stop()
 
+	var (
+		retries204    int
+		maxRetries204 = 3
+	)
+
 	for {
 		select {
 		case <-ticker.C:
@@ -80,6 +91,18 @@ func (s *OrderService) startStatusChecker(number string) {
 				log.Printf("Status check error: %v", err)
 				continue
 			}
+
+			if status == "204" {
+				retries204++
+				if retries204 >= maxRetries204 {
+					if err := s.orderRepo.UpdateOrderStatus(ctx, number, "INVALID", 0); err != nil {
+						log.Printf("Failed to mark order as INVALID: %v", err)
+					}
+					return
+				}
+				continue
+			}
+			retries204 = 0
 
 			if err := s.orderRepo.UpdateOrderStatus(ctx, number, status, accrual); err != nil {
 				log.Printf("Failed to update order status: %v", err)
@@ -97,12 +120,10 @@ func (s *OrderService) startStatusChecker(number string) {
 
 func (s *OrderService) GetOrders(ctx context.Context, userID int) ([]repos.Order, error) {
 	orders, err := s.orderRepo.GetOrders(ctx, userID)
-
 	if err != nil {
-		return nil, fmt.Errorf("failed to get orders: %w", err)
+		return nil, err
 	}
 	return orders, nil
-
 }
 
 func (s *OrderService) checkOrderStatus(ctx context.Context, number string) (string, float64, error) {
@@ -133,12 +154,12 @@ func (s *OrderService) checkOrderStatus(ctx context.Context, number string) (str
 
 func validateOrderNumber(number string) error {
 	if _, err := strconv.Atoi(number); err != nil {
-		return ErrInvalidNumber
+		return dferrors.ErrInvalidNumber
 	}
 
 	err := goluhn.Validate(number)
 	if err != nil {
-		return errors.New("invalid check digit")
+		return dferrors.ErrInvalidNumber
 	}
 	return nil
 }
@@ -146,16 +167,25 @@ func validateOrderNumber(number string) error {
 func getCheckInterval() time.Duration {
 	intervalStr := os.Getenv("CHECK_INTERVAL_SECONDS")
 	if intervalStr == "" {
-		intervalStr = "5"
+		intervalStr = "1"
 	}
 
 	interval, err := strconv.Atoi(intervalStr)
 	if err != nil {
-		return 5 * time.Second
+		return 1 * time.Second
 	}
 	return time.Duration(interval) * time.Second
 }
 
 func isFinalStatus(status string) bool {
 	return status == "PROCESSED" || status == "INVALID"
+}
+
+func mapStatusToHTTP(status string) int {
+	switch status {
+	case "PROCESSED", "INVALID":
+		return http.StatusAccepted
+	default:
+		return http.StatusOK
+	}
 }

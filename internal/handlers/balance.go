@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
+	"gophermart/internal/dferrors"
 	"gophermart/internal/services"
 	"net/http"
 )
@@ -45,11 +47,36 @@ func (h *BalanceHandler) Withdraw(c *gin.Context) {
 		return
 	}
 
-	h.balanceService.QueueWithdraw(services.WithdrawRequest{
-		UserID:      c.GetInt("userID"),
-		OrderNumber: req.Order,
-		Sum:         req.Sum,
-	})
+	userID := c.GetInt("userID")
 
-	c.Status(http.StatusAccepted)
+	hasFunds, err := h.balanceService.HasSufficientFunds(c.Request.Context(), userID, req.Sum)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	if !hasFunds {
+		c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient funds"})
+		return
+	}
+
+	err = h.balanceService.Withdraw(c.Request.Context(), userID, req.Order, req.Sum)
+	switch {
+	case errors.Is(err, dferrors.ErrInsufficientFunds):
+		c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient funds"})
+	case errors.Is(err, dferrors.ErrDuplicateWithdrawal):
+		c.JSON(http.StatusConflict, gin.H{"error": "duplicate order"})
+	case err != nil:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+	default:
+		c.Status(http.StatusOK)
+	}
+
+	//h.balanceService.QueueWithdraw(services.WithdrawRequest{
+	//	UserID:      c.GetInt("userID"),
+	//	OrderNumber: req.Order,
+	//	Sum:         req.Sum,
+	//})
+	//
+	//c.Status(http.StatusOK)
 }
