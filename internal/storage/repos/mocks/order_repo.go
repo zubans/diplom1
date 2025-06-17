@@ -12,6 +12,11 @@ type OrderRepository struct {
 	mock.Mock
 }
 
+func (m *OrderRepository) GetPendingOrders(ctx context.Context) ([]repos.Order, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (m *OrderRepository) GetOrders(ctx context.Context, userID int) ([]repos.Order, error) {
 	args := m.Called(ctx, userID)
 	return args.Get(0).([]repos.Order), args.Error(1)
