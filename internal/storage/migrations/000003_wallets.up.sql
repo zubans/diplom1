@@ -1,6 +1,6 @@
 CREATE TABLE wallets
 (
-    id                SERIAL PRIMARY KEY,
+    id                INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id           INT            NOT NULL UNIQUE REFERENCES users (id),
     current_balance   NUMERIC(10, 5) NOT NULL DEFAULT 0 CHECK (current_balance >= 0),
     withdrawn_balance NUMERIC(10, 5) NOT NULL DEFAULT 0 CHECK (withdrawn_balance >= 0),

@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"gophermart/internal/repos"
+	"gophermart/internal/storage/repos"
 )
 
 type WithdrawalService struct {

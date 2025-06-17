@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"gophermart/internal/dferrors"
+	"gophermart/internal/dto"
 	"gophermart/internal/services"
 	"net/http"
 )
@@ -17,17 +18,14 @@ func New(authService *services.AuthService) *AuthHandler {
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
-	var req struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-	}
+	var req dto.CredentialsRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	userID, err := h.authService.Register(c.Request.Context(), req.Login, req.Password)
+	userID, err := h.authService.Register(c.Request.Context(), req)
 	if err != nil {
 		switch {
 		case errors.Is(err, dferrors.ErrUserAlreadyExists):
@@ -49,17 +47,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-	}
+	var req dto.CredentialsRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	token, err := h.authService.Login(c.Request.Context(), req.Login, req.Password)
+	token, err := h.authService.Login(c.Request.Context(), req)
 	if err != nil {
 		switch {
 		case errors.Is(err, dferrors.ErrInvalidCredentials):

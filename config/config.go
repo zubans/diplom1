@@ -11,6 +11,7 @@ type Config struct {
 	RunAddr        string `env:"RUN_ADDRESS"`
 	DBCfg          string `env:"DATABASE_URI"`
 	AccrualAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
+	Migrations     string
 }
 
 func NewServerConfig() *Config {
@@ -35,6 +36,8 @@ func NewServerConfig() *Config {
 
 	cfg.RunAddr = strings.TrimPrefix(cfg.RunAddr, "http://")
 	cfg.RunAddr = strings.TrimPrefix(cfg.RunAddr, "https://")
+
+	cfg.Migrations = "internal/storage/migrations"
 
 	return &cfg
 }

@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"github.com/stretchr/testify/mock"
 	"gophermart/internal/dferrors"
+	"gophermart/internal/storage/repos/mocks"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"gophermart/internal/repos/mocks"
 	"gophermart/internal/services"
 )
 

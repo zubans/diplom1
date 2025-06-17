@@ -1,5 +1,5 @@
 CREATE TABLE orders (
-                        id            SERIAL PRIMARY KEY,
+                        id            INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                         number        VARCHAR(32) NOT NULL UNIQUE,
                         user_id       INTEGER NOT NULL REFERENCES users(id),
                         status        VARCHAR(16) NOT NULL,         -- NEW, PROCESSING, INVALID, PROCESSED

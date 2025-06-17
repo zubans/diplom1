@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"gophermart/internal/dferrors"
-	"gophermart/internal/repos"
 	"io"
 	"net/http"
 	"time"
@@ -79,7 +78,7 @@ func (h *OrderHandler) UploadOrder(c *gin.Context) {
 		switch {
 		case errors.Is(err, dferrors.ErrInvalidNumber):
 			c.AbortWithStatus(http.StatusUnprocessableEntity)
-		case errors.Is(err, repos.ErrOrderConflict):
+		case errors.Is(err, dferrors.ErrOrderConflict):
 			c.AbortWithStatus(http.StatusConflict)
 		default:
 			c.AbortWithStatus(http.StatusInternalServerError)

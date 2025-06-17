@@ -3,13 +3,8 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
-)
-
-var (
-	ErrOrderConflict = errors.New("order conflict")
 )
 
 type Order struct {
@@ -24,6 +19,7 @@ type OrderRepository interface {
 	CreateOrder(ctx context.Context, userID int, number string) error
 	UpdateOrderStatus(ctx context.Context, number string, status string, accrual float64) error
 	GetOrders(ctx context.Context, userID int) ([]Order, error)
+	GetPendingOrders(ctx context.Context) ([]Order, error)
 }
 
 type PostgresOrderRepository struct {
@@ -77,6 +73,27 @@ func (r *PostgresOrderRepository) GetOrders(ctx context.Context, userID int) ([]
 	}
 
 	return result, nil
+}
+
+func (r *PostgresOrderRepository) GetPendingOrders(ctx context.Context) ([]Order, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT number FROM orders 
+		WHERE status NOT IN ('PROCESSED', 'INVALID')`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []Order
+	for rows.Next() {
+		var o Order
+		if err := rows.Scan(&o.Number); err != nil {
+			return nil, err
+		}
+		orders = append(orders, o)
+	}
+
+	return orders, rows.Err()
 }
 
 //func (r *PostgresOrderRepository) GetOrders(ctx context.Context, userID int) ([]Order, error) {

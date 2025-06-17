@@ -2,7 +2,7 @@ package mocks
 
 import (
 	"context"
-	"gophermart/internal/repos"
+	"gophermart/internal/storage/repos"
 )
 
 func (m *BalanceRepository) Withdraw(ctx context.Context, userID int, orderNumber string, sum float64) error {

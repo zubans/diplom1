@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gophermart/internal/dferrors"
+	"gophermart/internal/storage/repos"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/ShiraazMoollatjie/goluhn"
-	"gophermart/internal/repos"
 )
 
 type OrderService struct {
@@ -49,7 +49,7 @@ func (s *OrderService) AddOrder(ctx context.Context, userID int, number string) 
 	case existingUserID == userID:
 		return http.StatusOK, nil
 	case existingUserID != 0:
-		return http.StatusConflict, repos.ErrOrderConflict
+		return http.StatusConflict, dferrors.ErrOrderConflict
 	}
 
 	if err := s.orderRepo.CreateOrder(ctx, userID, number); err != nil {
@@ -150,6 +150,23 @@ func (s *OrderService) checkOrderStatus(ctx context.Context, number string) (str
 	}
 
 	return result.Status, result.Accrual, nil
+}
+
+func (s *OrderService) RecoverPendingOrders(ctx context.Context) error {
+	orders, err := s.orderRepo.GetPendingOrders(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get pending orders: %w", err)
+	}
+
+	for _, order := range orders {
+		s.QueueOrderCheck(order.Number)
+	}
+
+	return nil
+}
+
+func (s *OrderService) QueueOrderCheck(number string) {
+	go s.startStatusChecker(number)
 }
 
 func validateOrderNumber(number string) error {

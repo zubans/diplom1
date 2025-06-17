@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
-	"gophermart/internal/repos"
+	"gophermart/internal/dto"
+	"gophermart/internal/storage/repos"
 	"time"
 )
 
@@ -27,38 +28,36 @@ func NewAuthService(
 
 func (s *AuthService) Register(
 	ctx context.Context,
-	login,
-	password string,
+	req dto.CredentialsRequest,
 ) (int, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword(
-		[]byte(password),
+		[]byte(req.Password),
 		bcrypt.DefaultCost,
 	)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.userRepo.CreateUser(ctx, login, string(hashedPassword))
+	return s.userRepo.CreateUser(ctx, req.Login, string(hashedPassword))
 }
 
 func (s *AuthService) Login(
 	ctx context.Context,
-	login,
-	password string,
+	req dto.CredentialsRequest,
 ) (string, error) {
-	storedHash, err := s.userRepo.GetPasswordHash(ctx, login)
+	storedHash, err := s.userRepo.GetPasswordHash(ctx, req.Login)
 	if err != nil {
 		return "", err
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(storedHash),
-		[]byte(password),
+		[]byte(req.Password),
 	); err != nil {
 		return "", errors.New("invalid credentials")
 	}
 
-	user, err := s.userRepo.GetUserByLogin(ctx, login)
+	user, err := s.userRepo.GetUserByLogin(ctx, req.Login)
 	if err != nil {
 		return "", err
 	}

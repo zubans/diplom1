@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"gophermart/config"
-	"gophermart/internal/repos"
 	"gophermart/internal/services"
+	"gophermart/internal/storage"
+	"gophermart/internal/storage/repos"
 	"log"
 	"os"
 
@@ -11,7 +13,6 @@ import (
 	"github.com/joho/godotenv"
 
 	"gophermart/internal/handlers"
-	"gophermart/internal/initialize"
 	"gophermart/internal/middlewares"
 	"gophermart/internal/routes"
 )
@@ -29,7 +30,13 @@ func main() {
 		log.Fatal("JWT_SECRET must be set")
 	}
 
-	db := initialize.InitDB(cfg)
+	db, err := storage.NewDB(storage.Config{
+		DBCfg:      cfg.DBCfg,
+		Migrations: cfg.Migrations,
+	})
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
 	defer db.Close()
 
 	r := gin.Default()
@@ -41,6 +48,11 @@ func main() {
 
 	orderRepo := repos.NewPostgresOrderRepository(db)
 	orderService := services.NewOrderService(orderRepo, cfg.AccrualAddress)
+
+	if err := orderService.RecoverPendingOrders(context.Background()); err != nil {
+		log.Fatalf("Failed to recover pending orders: %v", err)
+	}
+
 	orderHandler := handlers.NewOrderHandler(orderService)
 
 	routes.SetupOrderRoutes(r, orderHandler, authMW)

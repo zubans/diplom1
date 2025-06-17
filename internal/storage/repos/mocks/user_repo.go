@@ -2,7 +2,7 @@ package mocks
 
 import (
 	"context"
-	"gophermart/internal/repos"
+	"gophermart/internal/storage/repos"
 
 	"github.com/stretchr/testify/mock"
 )

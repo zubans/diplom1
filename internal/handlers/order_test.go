@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"gophermart/internal/repos"
+	"gophermart/internal/storage/repos"
+	"gophermart/internal/storage/repos/mocks"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,7 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gophermart/internal/repos/mocks"
 	"gophermart/internal/services"
 )
 
