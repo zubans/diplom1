@@ -8,8 +8,6 @@ import (
 	"gophermart/internal/dferrors"
 	"gophermart/internal/storage/repos"
 	"gophermart/pkg/logger"
-	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -63,13 +61,17 @@ func (s *OrderService) AddOrder(ctx context.Context, userID int, number string) 
 	if err == nil {
 		if isFinalStatus(status) {
 			if err := s.orderRepo.UpdateOrderStatus(ctx, number, status, accrual); err != nil {
-				log.Printf("Failed to update initial status: %v", err)
+				return 0, err
 			}
 			return mapStatusToHTTP(status), nil
 		}
 	}
 
-	go s.startStatusChecker(ctx, number)
+	go func() {
+		if err := s.startStatusChecker(ctx, number); err != nil {
+			fmt.Printf("Status checker error: %v\n", err)
+		}
+	}()
 
 	return http.StatusAccepted, nil
 }
@@ -88,16 +90,14 @@ func (s *OrderService) startStatusChecker(ctx context.Context, number string) er
 		case <-ticker.C:
 			status, accrual, err := s.checkOrderStatus(ctx, number)
 			if err != nil {
-				log.Printf("Status check error: %v", err)
-				continue
+				return fmt.Errorf("status check error: %w", err)
 			}
 
 			if status == "204" {
 				retries204++
 				if retries204 >= maxRetries204 {
 					if err := s.orderRepo.UpdateOrderStatus(ctx, number, "INVALID", 0); err != nil {
-						log.Printf("Failed to mark order as INVALID: %v", err)
-						return err
+						return fmt.Errorf("mark order invalid error: %w", err)
 					}
 					return nil
 				}
@@ -106,8 +106,7 @@ func (s *OrderService) startStatusChecker(ctx context.Context, number string) er
 			retries204 = 0
 
 			if err := s.orderRepo.UpdateOrderStatus(ctx, number, status, accrual); err != nil {
-				log.Printf("Failed to update order status: %v", err)
-				return err
+				return fmt.Errorf("update status error: %w", err)
 			}
 
 			if isFinalStatus(status) {
@@ -136,12 +135,8 @@ func (s *OrderService) checkOrderStatus(ctx context.Context, number string) (str
 	if err != nil {
 		return "", 0, err
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			logger.Log.Error("Error closing response body", zap.Error(err))
-		}
-	}(resp.Body)
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", 0, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
