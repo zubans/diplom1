@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
+	"path/filepath"
 )
 
 var Log = zap.NewNop()
@@ -40,6 +41,17 @@ func Init(level string) error {
 	configFile, err := os.ReadFile("config.yaml")
 
 	if err != nil {
+		err := createLogDirForPath("logs/app.log")
+		if err != nil {
+			return err
+		}
+		err = createLogDirForPath("logs/errors.log")
+		if err != nil {
+			return err
+		}
+	}
+
+	if err != nil {
 		cfg = zap.NewDevelopmentConfig()
 	} else {
 		err := yaml.Unmarshal(configFile, &appCfg)
@@ -50,6 +62,15 @@ func Init(level string) error {
 		cfg = ConvertToZapConfig(appCfg.Logger)
 	}
 	cfg.Level = lvl
+
+	for _, path := range appCfg.Logger.OutputPaths {
+		if path == "stdout" || path == "stderr" {
+			continue
+		}
+		if err := createLogDirForPath(path); err != nil {
+			return err
+		}
+	}
 
 	zapLogger, err := cfg.Build()
 	if err != nil {
@@ -112,4 +133,26 @@ func Sync() {
 	if Log != nil {
 		_ = Log.Sync()
 	}
+}
+
+func createLogDirForPath(path string) error {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Dir(absPath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
+	}
+
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		if _, err := os.Create(absPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
