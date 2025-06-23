@@ -3,7 +3,8 @@ package config
 import (
 	"flag"
 	"github.com/caarlos0/env/v6"
-	"log"
+	"go.uber.org/zap"
+	"gophermart/pkg/logger"
 	"strings"
 )
 
@@ -31,7 +32,7 @@ func NewServerConfig() *Config {
 	cfg.DBCfg = db
 
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("Error parsing env vars: %v", err)
+		logger.Log.Fatal("Error parsing env vars", zap.Error(err))
 	}
 
 	cfg.RunAddr = strings.TrimPrefix(cfg.RunAddr, "http://")
@@ -44,7 +45,6 @@ func NewServerConfig() *Config {
 
 func RecoveryServer() {
 	if r := recover(); r != nil {
-		log.Printf("CRITICAL error %v", r)
-
+		logger.Log.Fatal("CRITICAL error", zap.Any("error", r))
 	}
 }

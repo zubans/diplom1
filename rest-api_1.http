@@ -37,7 +37,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk1NTAyO
 ### Баланс
 GET http://localhost:8080/api/user/balance HTTP/1.1
 Content-Length: 0
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk1NTAyOTUsImlhdCI6MTc0OTQ2Mzg5NSwic3ViIjo5fQ.NGnDPpDd3VbKgdkx7kzhn1IkePoIvb4p7Js22FqCS0E
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTAyMzc0NTUsImlhdCI6MTc1MDE1MTA1NSwic3ViIjo5fQ.W9yjrUUyLj89gYGbU8cU9slLoNJeOsrPdIpneI9TLV0
 
 ### Совершенные покупки
 GET http://localhost:8080/api/user/withdrawals HTTP/1.1

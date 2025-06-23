@@ -3,8 +3,10 @@ package handlers
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gophermart/internal/dferrors"
 	"gophermart/internal/services"
+	"gophermart/pkg/logger"
 	"net/http"
 )
 
@@ -26,6 +28,7 @@ func (h *BalanceHandler) GetBalance(c *gin.Context) {
 
 	balance, err := h.balanceService.GetBalance(c.Request.Context(), userID)
 	if err != nil {
+		logger.Log.Error("Failed to get balance", zap.Error(err), zap.Int("userID", userID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
@@ -43,6 +46,7 @@ func (h *BalanceHandler) Withdraw(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Log.Error("Failed to withdraw", zap.Error(err), zap.String("Order", req.Order))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
@@ -51,11 +55,13 @@ func (h *BalanceHandler) Withdraw(c *gin.Context) {
 
 	hasFunds, err := h.balanceService.HasSufficientFunds(c.Request.Context(), userID, req.Sum)
 	if err != nil {
+		logger.Log.Error("Failed to withdraw", zap.Error(err), zap.String("Order", req.Order), zap.Int("UserID", userID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
 	if !hasFunds {
+		logger.Log.Error("insufficient funds", zap.Error(err), zap.Int("UserID", userID))
 		c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient funds"})
 		return
 	}
@@ -63,10 +69,13 @@ func (h *BalanceHandler) Withdraw(c *gin.Context) {
 	err = h.balanceService.Withdraw(c.Request.Context(), userID, req.Order, req.Sum)
 	switch {
 	case errors.Is(err, dferrors.ErrInsufficientFunds):
+		logger.Log.Error("insufficient funds", zap.Error(err), zap.Int("UserID", userID))
 		c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient funds"})
 	case errors.Is(err, dferrors.ErrDuplicateWithdrawal):
+		logger.Log.Error("duplicate order", zap.Error(err), zap.String("OrderID", req.Order))
 		c.JSON(http.StatusConflict, gin.H{"error": "duplicate order"})
 	case err != nil:
+		logger.Log.Error("duplicate order", zap.Error(err), zap.String("OrderID", req.Order), zap.Int("UserID", userID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 	default:
 		c.Status(http.StatusOK)

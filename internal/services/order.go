@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"gophermart/internal/dferrors"
 	"gophermart/internal/storage/repos"
+	"gophermart/pkg/logger"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -66,12 +69,12 @@ func (s *OrderService) AddOrder(ctx context.Context, userID int, number string) 
 		}
 	}
 
-	go s.startStatusChecker(number)
+	go s.startStatusChecker(ctx, number)
 
 	return http.StatusAccepted, nil
 }
 
-func (s *OrderService) startStatusChecker(number string) {
+func (s *OrderService) startStatusChecker(ctx context.Context, number string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -97,8 +100,9 @@ func (s *OrderService) startStatusChecker(number string) {
 				if retries204 >= maxRetries204 {
 					if err := s.orderRepo.UpdateOrderStatus(ctx, number, "INVALID", 0); err != nil {
 						log.Printf("Failed to mark order as INVALID: %v", err)
+						return err
 					}
-					return
+					return nil
 				}
 				continue
 			}
@@ -106,14 +110,15 @@ func (s *OrderService) startStatusChecker(number string) {
 
 			if err := s.orderRepo.UpdateOrderStatus(ctx, number, status, accrual); err != nil {
 				log.Printf("Failed to update order status: %v", err)
+				return err
 			}
 
 			if isFinalStatus(status) {
-				return
+				return nil
 			}
 
 		case <-ctx.Done():
-			return
+			return ctx.Err()
 		}
 	}
 }
@@ -134,7 +139,12 @@ func (s *OrderService) checkOrderStatus(ctx context.Context, number string) (str
 	if err != nil {
 		return "", 0, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			logger.Log.Error("Error closing response body", zap.Error(err))
+		}
+	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return "", 0, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -159,14 +169,19 @@ func (s *OrderService) RecoverPendingOrders(ctx context.Context) error {
 	}
 
 	for _, order := range orders {
-		s.QueueOrderCheck(order.Number)
+		s.QueueOrderCheck(ctx, order.Number)
 	}
 
 	return nil
 }
 
-func (s *OrderService) QueueOrderCheck(number string) {
-	go s.startStatusChecker(number)
+func (s *OrderService) QueueOrderCheck(ctx context.Context, number string) {
+	go func() {
+		err := s.startStatusChecker(ctx, number)
+		if err != nil {
+			logger.Log.Error("Error starting status checker", zap.Error(err))
+		}
+	}()
 }
 
 func validateOrderNumber(number string) error {

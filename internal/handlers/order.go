@@ -3,7 +3,9 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"go.uber.org/zap"
 	"gophermart/internal/dferrors"
+	"gophermart/pkg/logger"
 	"io"
 	"net/http"
 	"time"
@@ -32,6 +34,7 @@ func (h *OrderHandler) GetOrders(c *gin.Context) {
 
 	orders, err := h.orderService.GetOrders(c.Request.Context(), userID)
 	if err != nil {
+		logger.Log.Error("internal error", zap.Error(err), zap.Int("UserID", userID), zap.Any("BODY", c.Request.Body))
 		c.JSON(http.StatusOK, gin.H{"error": "internal error"})
 		return
 	}
@@ -68,6 +71,7 @@ func (h *OrderHandler) UploadOrder(c *gin.Context) {
 
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		logger.Log.Error("error read body", zap.Error(err), zap.Int("UserID", userID), zap.Any("BODY", c.Request.Body))
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -77,10 +81,13 @@ func (h *OrderHandler) UploadOrder(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, dferrors.ErrInvalidNumber):
+			logger.Log.Error(dferrors.ErrInvalidNumber.Error(), zap.Error(err), zap.Int("UserID", userID), zap.Any("BODY", c.Request.Body))
 			c.AbortWithStatus(http.StatusUnprocessableEntity)
 		case errors.Is(err, dferrors.ErrOrderConflict):
+			logger.Log.Error(dferrors.ErrOrderConflict.Error(), zap.Error(err), zap.Int("UserID", userID), zap.Any("BODY", c.Request.Body))
 			c.AbortWithStatus(http.StatusConflict)
 		default:
+			logger.Log.Error("internal error", zap.Error(err), zap.Int("UserID", userID), zap.Any("BODY", c.Request.Body))
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 		return

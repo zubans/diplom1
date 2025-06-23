@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gophermart/internal/services"
+	"gophermart/pkg/logger"
 	"net/http"
 )
 
@@ -25,6 +27,7 @@ func (h *WithdrawalHandler) GetWithdrawals(c *gin.Context) {
 
 	withdrawals, err := h.WithdrawalService.GetWithdrawals(c.Request.Context(), userID)
 	if err != nil {
+		logger.Log.Error("internal error", zap.Error(err), zap.Int("UserID", userID), zap.Any("BODY", c.Request.Body))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}

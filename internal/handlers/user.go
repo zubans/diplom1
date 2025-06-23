@@ -3,9 +3,11 @@ package handlers
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gophermart/internal/dferrors"
 	"gophermart/internal/dto"
 	"gophermart/internal/services"
+	"gophermart/pkg/logger"
 	"net/http"
 )
 
@@ -21,6 +23,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.CredentialsRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Log.Error("invalid request", zap.Error(err), zap.String("Login", req.Login), zap.Any("BODY", c.Request.Body))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
@@ -29,8 +32,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, dferrors.ErrUserAlreadyExists):
+			logger.Log.Info("user already exists", zap.Error(err), zap.String("Login", req.Login), zap.Any("BODY", c.Request.Body))
 			c.JSON(http.StatusConflict, gin.H{"error": "user already exists"})
 		default:
+			logger.Log.Info("internal error", zap.Error(err), zap.String("Login", req.Login), zap.Any("BODY", c.Request.Body))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		}
 		return
@@ -38,6 +43,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	token, err := h.authService.GenerateToken(userID)
 	if err != nil {
+		logger.Log.Error("internal error", zap.Error(err), zap.String("Login", req.Login), zap.Any("BODY", c.Request.Body))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
@@ -50,6 +56,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.CredentialsRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Log.Error("invalid request", zap.Error(err), zap.String("Login", req.Login), zap.Any("BODY", c.Request.Body))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
@@ -58,8 +65,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, dferrors.ErrInvalidCredentials):
+			logger.Log.Info("invalid credentials", zap.Error(err), zap.String("Login", req.Login), zap.Any("BODY", c.Request.Body))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		default:
+			logger.Log.Error("internal error", zap.Error(err), zap.String("Login", req.Login), zap.Any("BODY", c.Request.Body))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		}
 		return
