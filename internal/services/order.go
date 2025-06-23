@@ -75,9 +75,6 @@ func (s *OrderService) AddOrder(ctx context.Context, userID int, number string) 
 }
 
 func (s *OrderService) startStatusChecker(ctx context.Context, number string) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	ticker := time.NewTicker(s.checkInterval)
 	defer ticker.Stop()
 
