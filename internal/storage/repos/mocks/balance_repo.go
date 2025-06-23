@@ -2,9 +2,8 @@ package mocks
 
 import (
 	"context"
-	"gophermart/internal/storage/repos"
-
 	"github.com/stretchr/testify/mock"
+	"gophermart/internal/storage/repos"
 )
 
 type BalanceRepository struct {

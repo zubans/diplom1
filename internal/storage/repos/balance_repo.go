@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 	"gophermart/internal/dferrors"
+	"gophermart/pkg/logger"
 )
 
 type PostgresBalanceRepository struct {
@@ -47,7 +49,12 @@ func (r *PostgresBalanceRepository) Withdraw(ctx context.Context, userID int, or
 	if err != nil {
 		return fmt.Errorf("transaction begin error: %w", err)
 	}
-	defer tx.Rollback()
+	defer func(tx *sql.Tx) {
+		err := tx.Rollback()
+		if err != nil {
+			logger.Log.Error("Error rollback transaction withdraw", zap.Error(err), zap.Int("UserID", userID), zap.String("orderNumber", orderNumber))
+		}
+	}(tx)
 
 	var currentBalance float64
 	err = tx.QueryRowContext(ctx,
