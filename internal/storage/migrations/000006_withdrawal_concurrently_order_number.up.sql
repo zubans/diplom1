@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY idx_unique_withdrawal_order ON withdrawals (order_number);

@@ -1,0 +1,11 @@
+logger:
+  level: debug
+  encoding: console
+  outputPaths: [ stdout, logs/app.log ]
+  errorOutputPaths: [ "stderr", logs/errors.log ]
+  encoderConfig:
+    messageKey: msg
+    levelKey: level
+    levelEncoder: lowercase
+    timeKey: ts
+    encodeTime: iso8601
